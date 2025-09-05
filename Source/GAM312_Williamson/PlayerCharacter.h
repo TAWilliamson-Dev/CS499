@@ -4,6 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Camera/CameraComponent.h"
+#include <EnhancedInputSubsystemInterface.h>
+#include <EnhancedInputSubsystems.h>
+#include <EnhancedInputComponent.h>
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
@@ -27,17 +31,30 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION()
-	void MoveForward(float axis);
+	void Move(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void MoveRight(float axis);
-
-	UFUNCTION()
-	void StartJump();
+	void StartJump(const FInputActionValue& Value);
 
 	UFUNCTION()
 	void StopJump();
 
 	UFUNCTION()
-	void GetObject();
+	void GetObject(const FInputActionValue& Value);
+
+	UPROPERTY(VisibleAnywhere)
+	UCameraComponent* PlayerCamera;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnhancedInput")
+	UInputMappingContext* InputMapping;
+	class UInputMappingContext;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* MoveAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadonly)
+	UInputAction* JumpAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* InteractAction;
 };
