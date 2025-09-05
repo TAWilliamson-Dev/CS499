@@ -42,6 +42,9 @@ public:
 	UFUNCTION()
 	void GetObject(const FInputActionValue& Value);
 
+	UFUNCTION()
+	void Look(const FInputActionValue& Value);
+
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* PlayerCamera;
 
@@ -57,4 +60,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* InteractAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* LookAction;
 };

@@ -44,25 +44,37 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-
 	Input->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StartJump);
+	Input->BindAction(JumpAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopJump);
+	Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value) {
 	FVector2d Axis2DValue = Value.Get<FVector2D>();
-
+	
+	AddMovementInput(this->GetActorForwardVector(), Axis2DValue.X);
+	AddMovementInput(this->GetActorRightVector(), Axis2DValue.Y);
 
 }
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value) {
 	bool BoolValue = Value.Get<bool>();
 
+	APlayerCharacter::Jump();
 }
 
 void APlayerCharacter::StopJump() {
-
+	
 }
 
 void APlayerCharacter::GetObject(const FInputActionValue& Value) {
 	bool BoolValue = Value.Get<bool>();
+}
+
+void APlayerCharacter::Look(const FInputActionValue& Value)
+{
+	FVector2d Axis2DValue = Value.Get<FVector2D>();
+	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1.0f, FColor::Green, Axis2DValue.ToString(), true);
+	AddControllerYawInput(Axis2DValue.X);
+	AddControllerPitchInput(-1.0f * Axis2DValue.Y);
 }
