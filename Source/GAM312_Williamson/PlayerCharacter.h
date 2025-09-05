@@ -8,6 +8,7 @@
 #include <EnhancedInputSubsystemInterface.h>
 #include <EnhancedInputSubsystems.h>
 #include <EnhancedInputComponent.h>
+#include <GameFramework/CharacterMovementComponent.h>
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
@@ -30,6 +31,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	virtual void Landed(const FHitResult& Hit) override;
+
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
@@ -45,9 +48,24 @@ public:
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
 
+	UPROPERTY(BlueprintReadOnly, Category = "Jump")
+	int JumpCount;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
+	int MaxJumpCount;
+
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* PlayerCamera;
 
+	UPROPERTY(VisibleDefaultsOnly)
+	UCharacterMovementComponent* PlayerCharacterMovement;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Assets")
+	USkeletalMesh* AlternateMeshAsset;
+
+	/*
+		Enhanced input mapping context and actions
+	*/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnhancedInput")
 	UInputMappingContext* InputMapping;
 	class UInputMappingContext;

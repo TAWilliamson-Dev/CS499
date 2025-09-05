@@ -14,6 +14,8 @@ APlayerCharacter::APlayerCharacter()
 	PlayerCamera->SetupAttachment(GetMesh(), "head");
 
 	PlayerCamera->bUsePawnControlRotation = true;
+
+	PlayerCharacterMovement = GetCharacterMovement();
 }
 
 // Called when the game starts or when spawned
@@ -21,6 +23,11 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (AlternateMeshAsset)
+	{
+		USkeletalMeshComponent* PlayerMesh = GetMesh();
+		PlayerMesh->SetSkeletalMesh(AlternateMeshAsset);
+	}
 }
 
 // Called every frame
@@ -44,8 +51,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
-	Input->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APlayerCharacter::StartJump);
-	Input->BindAction(JumpAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopJump);
+	Input->BindAction(JumpAction, ETriggerEvent::Completed, this, &APlayerCharacter::StartJump);
 	Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
 }
 
@@ -59,12 +65,33 @@ void APlayerCharacter::Move(const FInputActionValue& Value) {
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value) {
 	bool BoolValue = Value.Get<bool>();
+	float JumpHeight = PlayerCharacterMovement->JumpZVelocity;
 
-	APlayerCharacter::Jump();
+	if (!PlayerCharacterMovement->IsFalling() &&  JumpCount < MaxJumpCount) {
+		LaunchCharacter(FVector(0, 0, JumpHeight), false, true);
+		JumpCount++;
+		//Debug jump counter
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			10.0f,
+			FColor::Cyan,
+			FString::Printf(TEXT("You jumped %i times!"), JumpCount)
+		);
+	}
+	else if (PlayerCharacterMovement->IsFalling() && JumpCount < MaxJumpCount) {
+		LaunchCharacter(FVector(GetActorForwardVector().X * JumpHeight, GetActorForwardVector().Y * JumpHeight, JumpHeight), true, true);
+		
+		JumpCount++;
+	}
 }
 
 void APlayerCharacter::StopJump() {
-	
+	//Reset jump counter when player is moving on the ground	
+	JumpCount = 0;
+}
+
+void APlayerCharacter::Landed(const FHitResult& Hit) {
+	this->StopJump();
 }
 
 void APlayerCharacter::GetObject(const FInputActionValue& Value) {
@@ -74,7 +101,7 @@ void APlayerCharacter::GetObject(const FInputActionValue& Value) {
 void APlayerCharacter::Look(const FInputActionValue& Value)
 {
 	FVector2d Axis2DValue = Value.Get<FVector2D>();
-	GEngine->AddOnScreenDebugMessage(INDEX_NONE, 1.0f, FColor::Green, Axis2DValue.ToString(), true);
+	
 	AddControllerYawInput(Axis2DValue.X);
 	AddControllerPitchInput(-1.0f * Axis2DValue.Y);
 }
