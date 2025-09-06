@@ -40,19 +40,58 @@ public:
 	void StartJump(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void StopJump();
-
-	UFUNCTION()
 	void GetObject(const FInputActionValue& Value);
 
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void Sprint(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void StopSprint(const FInputActionValue& Value);
 
 	UPROPERTY(BlueprintReadOnly, Category = "Jump")
 	int JumpCount;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
 	int MaxJumpCount;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float Stamina;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float StaminaRegenRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float MaxStamina;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float Health;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float HealthRegenRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float SprintSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float EncumberedStaminaModifier;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float SprintStaminaDrain;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float WalkSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float CrouchWalkSpeed;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool IsRunning;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool IsEncumbered;
 
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* PlayerCamera;
@@ -64,7 +103,7 @@ public:
 	USkeletalMesh* AlternateMeshAsset;
 
 	/*
-		Enhanced input mapping context and actions
+		Enhanced input mapping context and actions, can be broken off into separate data asset.
 	*/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "EnhancedInput")
 	UInputMappingContext* InputMapping;
@@ -81,4 +120,22 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* LookAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* SprintAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* CrouchAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* MenuAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) 
+	UInputAction* ObjectiveUIAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* InventoryUIAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* HotbarUISelectAction;
 };

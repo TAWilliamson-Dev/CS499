@@ -25,6 +25,7 @@ void APlayerCharacter::BeginPlay()
 
 	if (AlternateMeshAsset)
 	{
+		//Adjust skeletal mesh if alternate mesh is specified.
 		USkeletalMeshComponent* PlayerMesh = GetMesh();
 		PlayerMesh->SetSkeletalMesh(AlternateMeshAsset);
 	}
@@ -34,6 +35,17 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (IsRunning && IsEncumbered) {
+		Stamina -= SprintStaminaDrain * EncumberedStaminaModifier * DeltaTime;
+	}
+	else if (IsRunning) {
+		Stamina -= SprintStaminaDrain * DeltaTime;
+	}
+	else if (Stamina < MaxStamina) {
+		Stamina += StaminaRegenRate * DeltaTime;
+	}
+
 
 }
 
@@ -53,6 +65,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
 	Input->BindAction(JumpAction, ETriggerEvent::Completed, this, &APlayerCharacter::StartJump);
 	Input->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Look);
+	Input->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Sprint);
+	Input->BindAction(SprintAction, ETriggerEvent::Canceled, this, &APlayerCharacter::StopSprint);
+	Input->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
+
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value) {
@@ -70,38 +86,48 @@ void APlayerCharacter::StartJump(const FInputActionValue& Value) {
 	if (!PlayerCharacterMovement->IsFalling() &&  JumpCount < MaxJumpCount) {
 		LaunchCharacter(FVector(0, 0, JumpHeight), false, true);
 		JumpCount++;
-		//Debug jump counter
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			10.0f,
-			FColor::Cyan,
-			FString::Printf(TEXT("You jumped %i times!"), JumpCount)
-		);
 	}
 	else if (PlayerCharacterMovement->IsFalling() && JumpCount < MaxJumpCount) {
+		//If double jump or higher is available (Controlled via MaxJumpCount), adjust jump direction along forward vector.
 		LaunchCharacter(FVector(GetActorForwardVector().X * JumpHeight, GetActorForwardVector().Y * JumpHeight, JumpHeight), true, true);
-		
 		JumpCount++;
 	}
 }
 
-void APlayerCharacter::StopJump() {
-	//Reset jump counter when player is moving on the ground	
-	JumpCount = 0;
-}
-
 void APlayerCharacter::Landed(const FHitResult& Hit) {
-	this->StopJump();
+	//Reset jump counter when player makes contact with the ground
+	Super::Landed(Hit);
+	JumpCount = 0;
 }
 
 void APlayerCharacter::GetObject(const FInputActionValue& Value) {
 	bool BoolValue = Value.Get<bool>();
+	//Line trace from player to target object, pick up object if line trace hits
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)
 {
 	FVector2d Axis2DValue = Value.Get<FVector2D>();
 	
+	//Setup mouse look
 	AddControllerYawInput(Axis2DValue.X);
 	AddControllerPitchInput(-1.0f * Axis2DValue.Y);
+}
+
+void APlayerCharacter::Sprint(const FInputActionValue& Value) {
+	bool BoolValue = Value.Get<bool>();
+	
+	if (Stamina > 0) {
+		PlayerCharacterMovement->MaxWalkSpeed = SprintSpeed;
+		IsRunning = true;
+	}
+	else {
+		this->StopSprint(true);
+	}
+}
+
+void APlayerCharacter::StopSprint(const FInputActionValue& Value)
+{
+	PlayerCharacterMovement->MaxWalkSpeed = WalkSpeed;
+	IsRunning = false;
 }
