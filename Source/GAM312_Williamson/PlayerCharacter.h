@@ -87,8 +87,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
 	float CrouchWalkSpeed;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float JumpStaminaDrain;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	float SprintDrainStaminaDelay;
+
 	UPROPERTY(BlueprintReadOnly)
 	bool IsRunning;
+
+	UPROPERTY(BlueprintReadOnly)
+	bool IsJumping;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool IsEncumbered;

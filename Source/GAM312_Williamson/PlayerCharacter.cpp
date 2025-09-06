@@ -36,14 +36,20 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//Manage stamina drain / recharge over time
 	if (IsRunning && IsEncumbered) {
-		Stamina -= SprintStaminaDrain * EncumberedStaminaModifier * DeltaTime;
+		Stamina -= SprintStaminaDrain * EncumberedStaminaModifier * DeltaTime; //Increased stamina drain while inventory is overloaded.
 	}
 	else if (IsRunning) {
-		Stamina -= SprintStaminaDrain * DeltaTime;
+		Stamina -= SprintStaminaDrain * DeltaTime; //Drain stamina while sprinting
 	}
 	else if (Stamina < MaxStamina) {
-		Stamina += StaminaRegenRate * DeltaTime;
+		Stamina += StaminaRegenRate * DeltaTime; //Regen stamina while not performing an action that drains stamina over time
+
+		//Player ran out of stamina while sprinting
+		if (SprintDrainStaminaDelay > 0 && Stamina >= SprintDrainStaminaDelay) {
+			SprintDrainStaminaDelay = 0;
+		}
 	}
 
 
@@ -57,10 +63,11 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
-
+	//Clear default mapping context and add desired mapping contexts
 	Subsystem->ClearAllMappings();
 	Subsystem->AddMappingContext(InputMapping, 0);
 
+	//Bind Input Events to appropriate functions
 	UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
 	Input->BindAction(JumpAction, ETriggerEvent::Completed, this, &APlayerCharacter::StartJump);
@@ -83,14 +90,12 @@ void APlayerCharacter::StartJump(const FInputActionValue& Value) {
 	bool BoolValue = Value.Get<bool>();
 	float JumpHeight = PlayerCharacterMovement->JumpZVelocity;
 
-	if (!PlayerCharacterMovement->IsFalling() &&  JumpCount < MaxJumpCount) {
+	// Character can jump along forward vector if they have enough stamina, up to MaxJumpCount # of times. MaxJumpCount default is 1
+	if (Stamina >= JumpStaminaDrain && JumpCount < MaxJumpCount) {
 		LaunchCharacter(FVector(0, 0, JumpHeight), false, true);
 		JumpCount++;
-	}
-	else if (PlayerCharacterMovement->IsFalling() && JumpCount < MaxJumpCount) {
-		//If double jump or higher is available (Controlled via MaxJumpCount), adjust jump direction along forward vector.
-		LaunchCharacter(FVector(GetActorForwardVector().X * JumpHeight, GetActorForwardVector().Y * JumpHeight, JumpHeight), true, true);
-		JumpCount++;
+
+		Stamina -= JumpStaminaDrain;
 	}
 }
 
@@ -102,7 +107,7 @@ void APlayerCharacter::Landed(const FHitResult& Hit) {
 
 void APlayerCharacter::GetObject(const FInputActionValue& Value) {
 	bool BoolValue = Value.Get<bool>();
-	//Line trace from player to target object, pick up object if line trace hits
+	//TODO: Line trace from player to target object, pick up object if line trace hits
 }
 
 void APlayerCharacter::Look(const FInputActionValue& Value)
@@ -117,17 +122,24 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 void APlayerCharacter::Sprint(const FInputActionValue& Value) {
 	bool BoolValue = Value.Get<bool>();
 	
-	if (Stamina > 0) {
+	//Player can sprint if stamina is greater than SprintStaminaDrain, stamina drain and recharge are tracked in OnTick
+	if (Stamina > SprintStaminaDrain+SprintDrainStaminaDelay) {
 		PlayerCharacterMovement->MaxWalkSpeed = SprintSpeed;
 		IsRunning = true;
 	}
 	else {
 		this->StopSprint(true);
+		//Player ran out of stamina while sprinting, add a minimum stamina recharge to sprint again.
+		SprintDrainStaminaDelay = 25;
 	}
 }
 
 void APlayerCharacter::StopSprint(const FInputActionValue& Value)
 {
-	PlayerCharacterMovement->MaxWalkSpeed = WalkSpeed;
+	//Return player movement speed to normal
+	PlayerCharacterMovement->MaxWalkSpeed = WalkSpeed;	
 	IsRunning = false;
+
+	//if(!IsRunning)
+	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("False")));
 }
