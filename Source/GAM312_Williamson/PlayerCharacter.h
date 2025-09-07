@@ -9,6 +9,7 @@
 #include <EnhancedInputSubsystems.h>
 #include <EnhancedInputComponent.h>
 #include <GameFramework/CharacterMovementComponent.h>
+#include "StatComponent.h"
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
@@ -51,47 +52,11 @@ public:
 	UFUNCTION()
 	void StopSprint(const FInputActionValue& Value);
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
+	UStatComponent* Stats;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Jump")
 	int JumpCount;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Jump")
-	int MaxJumpCount;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float Stamina;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float StaminaRegenRate;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float MaxStamina;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float Health;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float HealthRegenRate;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float SprintSpeed;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float EncumberedStaminaModifier;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float SprintStaminaDrain;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float WalkSpeed;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float CrouchWalkSpeed;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float JumpStaminaDrain;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
-	float SprintDrainStaminaDelay;
 
 	UPROPERTY(BlueprintReadOnly)
 	bool IsRunning;

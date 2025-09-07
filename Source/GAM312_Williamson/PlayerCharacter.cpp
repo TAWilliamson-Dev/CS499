@@ -15,6 +15,8 @@ APlayerCharacter::APlayerCharacter()
 
 	PlayerCamera->bUsePawnControlRotation = true;
 
+	Stats = CreateDefaultSubobject<UStatComponent>("Stats");
+
 	PlayerCharacterMovement = GetCharacterMovement();
 }
 
@@ -38,21 +40,25 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 	//Manage stamina drain / recharge over time
 	if (IsRunning && IsEncumbered) {
-		Stamina -= SprintStaminaDrain * EncumberedStaminaModifier * DeltaTime; //Increased stamina drain while inventory is overloaded.
+		Stats->Stamina -= Stats->SprintStaminaDrain * Stats->EncumberedStaminaModifier * DeltaTime; //Increased stamina drain while inventory is overloaded.
 	}
 	else if (IsRunning) {
-		Stamina -= SprintStaminaDrain * DeltaTime; //Drain stamina while sprinting
+		Stats->Stamina -= Stats->SprintStaminaDrain * DeltaTime; //Drain stamina while sprinting
 	}
-	else if (Stamina < MaxStamina) {
-		Stamina += StaminaRegenRate * DeltaTime; //Regen stamina while not performing an action that drains stamina over time
+	else if (Stats->Stamina < Stats->MaxStamina) {
+		Stats->Stamina += Stats->StaminaRegenRate * DeltaTime; //Regen stamina while not performing an action that drains stamina over time
 
 		//Player ran out of stamina while sprinting
-		if (SprintDrainStaminaDelay > 0 && Stamina >= SprintDrainStaminaDelay) {
-			SprintDrainStaminaDelay = 0;
+		if (Stats->SprintDrainStaminaDelay > 0 && Stats->Stamina >= Stats->SprintDrainStaminaDelay) {
+			Stats->SprintDrainStaminaDelay = 0;
 		}
 	}
 
+	Stats->Hunger += Stats->HungerRate * DeltaTime;
 
+	if (Stats->Hunger >= Stats->MaxHunger) {
+		Stats->Health -= Stats->StarveHealthDrain * DeltaTime;
+	}
 }
 
 // Called to bind functionality to input
@@ -91,11 +97,11 @@ void APlayerCharacter::StartJump(const FInputActionValue& Value) {
 	float JumpHeight = PlayerCharacterMovement->JumpZVelocity;
 
 	// Character can jump along forward vector if they have enough stamina, up to MaxJumpCount # of times. MaxJumpCount default is 1
-	if (Stamina >= JumpStaminaDrain && JumpCount < MaxJumpCount) {
+	if (Stats->Stamina >= Stats->JumpStaminaDrain && JumpCount < Stats->MaxJumpCount) {
 		LaunchCharacter(FVector(0, 0, JumpHeight), false, true);
 		JumpCount++;
 
-		Stamina -= JumpStaminaDrain;
+		Stats->Stamina -= Stats->JumpStaminaDrain;
 	}
 }
 
@@ -123,21 +129,21 @@ void APlayerCharacter::Sprint(const FInputActionValue& Value) {
 	bool BoolValue = Value.Get<bool>();
 	
 	//Player can sprint if stamina is greater than SprintStaminaDrain, stamina drain and recharge are tracked in OnTick
-	if (Stamina > SprintStaminaDrain+SprintDrainStaminaDelay) {
-		PlayerCharacterMovement->MaxWalkSpeed = SprintSpeed;
+	if (Stats->Stamina > Stats->SprintStaminaDrain+ Stats->SprintDrainStaminaDelay) {
+		PlayerCharacterMovement->MaxWalkSpeed = Stats->SprintSpeed;
 		IsRunning = true;
 	}
 	else {
 		this->StopSprint(true);
 		//Player ran out of stamina while sprinting, add a minimum stamina recharge to sprint again.
-		SprintDrainStaminaDelay = 25;
+		Stats->SprintDrainStaminaDelay = 25;
 	}
 }
 
 void APlayerCharacter::StopSprint(const FInputActionValue& Value)
 {
 	//Return player movement speed to normal
-	PlayerCharacterMovement->MaxWalkSpeed = WalkSpeed;	
+	PlayerCharacterMovement->MaxWalkSpeed = Stats->WalkSpeed;
 	IsRunning = false;
 
 	//if(!IsRunning)
