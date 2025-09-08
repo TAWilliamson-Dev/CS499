@@ -56,6 +56,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 	Stats->Hunger += Stats->HungerRate * DeltaTime;
 
+	//Drain health over time if Hunger reaches 0
 	if (Stats->Hunger >= Stats->MaxHunger) {
 		Stats->Health -= Stats->StarveHealthDrain * DeltaTime;
 	}
