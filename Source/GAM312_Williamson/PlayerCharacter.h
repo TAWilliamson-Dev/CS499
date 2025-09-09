@@ -9,6 +9,7 @@
 #include <EnhancedInputSubsystems.h>
 #include <EnhancedInputComponent.h>
 #include <GameFramework/CharacterMovementComponent.h>
+#include "ResourcePickup.h"
 #include "StatComponent.h"
 #include "PlayerCharacter.generated.h"
 
@@ -51,6 +52,9 @@ public:
 
 	UFUNCTION()
 	void StopSprint(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void Interact(const FInputActionValue& Value);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
 	UStatComponent* Stats;

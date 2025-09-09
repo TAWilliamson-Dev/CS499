@@ -82,6 +82,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Input->BindAction(SprintAction, ETriggerEvent::Triggered, this, &APlayerCharacter::Sprint);
 	Input->BindAction(SprintAction, ETriggerEvent::Canceled, this, &APlayerCharacter::StopSprint);
 	Input->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
+	Input->BindAction(InteractAction, ETriggerEvent::Completed, this, &APlayerCharacter::Interact);
 
 }
 
@@ -149,4 +150,30 @@ void APlayerCharacter::StopSprint(const FInputActionValue& Value)
 
 	//if(!IsRunning)
 	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("False")));
+}
+
+void APlayerCharacter::Interact(const FInputActionValue& Value) {
+	FHitResult HitResult;
+	FVector StartLocation = PlayerCamera->GetComponentLocation();
+	FVector Direction = PlayerCamera->GetForwardVector() * 800.0f;
+	FVector EndLocation = StartLocation + Direction;
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.bTraceComplex = true;
+	QueryParams.bReturnFaceIndex = true;
+
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams)) {
+		AResourcePickup* HitResource = Cast<AResourcePickup>(HitResult.GetActor());
+
+		if (HitResource) {
+			
+			FString hitName = HitResource->resourceName;
+			int resourceValue = FMath::RandRange(HitResource->HarvestQuantity-HitResource->HarvestQuantityDelta, HitResource->HarvestQuantity + HitResource->HarvestQuantityDelta);
+
+			HitResource->MaxHarvest = HitResource->MaxHarvest - resourceValue;
+
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, hitName);
+		}
+	}
 }

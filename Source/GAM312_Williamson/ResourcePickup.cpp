@@ -39,6 +39,5 @@ void AResourcePickup::BeginPlay()
 void AResourcePickup::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
