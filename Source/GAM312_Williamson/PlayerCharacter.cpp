@@ -87,6 +87,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Input->BindAction(SprintAction, ETriggerEvent::Canceled, this, &APlayerCharacter::StopSprint);
 	Input->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
 	Input->BindAction(InteractAction, ETriggerEvent::Completed, this, &APlayerCharacter::Interact);
+	Input->BindAction(EatAction, ETriggerEvent::Completed, this, &APlayerCharacter::EatBerries);
 
 }
 
@@ -186,5 +187,21 @@ void APlayerCharacter::Interact(const FInputActionValue& Value) {
 
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You have %i of the item %s"),ResourceInventory[HitResource->ItemID], *HitResource->resourceName));
 		}
+	}
+}
+
+void APlayerCharacter::EatBerries(const FInputActionValue& Value)
+{
+	//ItemID = 0 : Berries
+	if (ResourceInventory[0] > 0) {
+		ResourceInventory[0] -= 1;
+		if (Stats->Hunger - 5 < Stats->MaxHunger) {
+			Stats->Hunger -= 5;
+
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You ate a berry!")));
+		}
+	}
+	else {
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You're out of berries.")));
 	}
 }

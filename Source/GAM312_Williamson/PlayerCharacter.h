@@ -54,6 +54,9 @@ public:
 	UFUNCTION()
 	void Interact(const FInputActionValue& Value);
 
+	UFUNCTION()
+	void EatBerries(const FInputActionValue& Value);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
 	UStatComponent* Stats;
 
@@ -117,6 +120,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* HotbarUISelectAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* EatAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<int> ResourceInventory;
