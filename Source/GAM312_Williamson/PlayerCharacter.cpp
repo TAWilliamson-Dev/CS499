@@ -18,6 +18,10 @@ APlayerCharacter::APlayerCharacter()
 	Stats = CreateDefaultSubobject<UStatComponent>("Stats");
 
 	PlayerCharacterMovement = GetCharacterMovement();
+
+	hitDecal = CreateDefaultSubobject<UMaterialInterface>("Hit Marker");
+
+	ResourceInventory.Init(0, 3);
 }
 
 // Called when the game starts or when spawned
@@ -113,11 +117,6 @@ void APlayerCharacter::Landed(const FHitResult& Hit) {
 	JumpCount = 0;
 }
 
-void APlayerCharacter::GetObject(const FInputActionValue& Value) {
-	bool BoolValue = Value.Get<bool>();
-	//TODO: Line trace from player to target object, pick up object if line trace hits
-}
-
 void APlayerCharacter::Look(const FInputActionValue& Value)
 {
 	FVector2d Axis2DValue = Value.Get<FVector2D>();
@@ -166,14 +165,26 @@ void APlayerCharacter::Interact(const FInputActionValue& Value) {
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams)) {
 		AResourcePickup* HitResource = Cast<AResourcePickup>(HitResult.GetActor());
 
-		if (HitResource) {
+		if (Stats->Stamina >= Stats->InteractStaminaCost && HitResource) {
 			
 			FString hitName = HitResource->resourceName;
 			int resourceValue = FMath::RandRange(HitResource->HarvestQuantity-HitResource->HarvestQuantityDelta, HitResource->HarvestQuantity + HitResource->HarvestQuantityDelta);
 
 			HitResource->MaxHarvest = HitResource->MaxHarvest - resourceValue;
 
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, hitName);
+			ResourceInventory[HitResource->ItemID] += resourceValue;
+
+			if (hitDecal) {
+				UGameplayStatics::SpawnDecalAtLocation(GetWorld(), hitDecal, FVector(10.0f, 10.0f, 10.0f), HitResult.Location, FRotator(-90, 0, 0), 2.0f);
+			}
+
+			Stats->Stamina -= Stats->InteractStaminaCost;
+
+			if (HitResource->MaxHarvest <= 0) {
+				HitResource->Destroy();
+			}
+
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You have %i of the item %s"),ResourceInventory[HitResource->ItemID], *HitResource->resourceName));
 		}
 	}
 }

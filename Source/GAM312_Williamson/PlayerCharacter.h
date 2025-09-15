@@ -11,6 +11,7 @@
 #include <GameFramework/CharacterMovementComponent.h>
 #include "ResourcePickup.h"
 #include "StatComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
@@ -40,9 +41,6 @@ public:
 
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
-
-	UFUNCTION()
-	void GetObject(const FInputActionValue& Value);
 
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
@@ -80,6 +78,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Assets")
 	USkeletalMesh* AlternateMeshAsset;
 
+	UPROPERTY(EditAnywhere, Category = "HitMarker")
+	UMaterialInterface* hitDecal;
+
 	/*
 		Enhanced input mapping context and actions, can be broken off into separate data asset.
 	*/
@@ -116,4 +117,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* HotbarUISelectAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<int> ResourceInventory;
 };

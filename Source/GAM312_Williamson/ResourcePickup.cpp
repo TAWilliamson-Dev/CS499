@@ -20,6 +20,8 @@ AResourcePickup::AResourcePickup()
 
 	ItemValue = 0;
 
+	ItemID = 0;
+
 	IsConsumable = false;
 
 	ConsumableStats = CreateDefaultSubobject<UConsumableItemStats>(TEXT("Consumable Stats"));

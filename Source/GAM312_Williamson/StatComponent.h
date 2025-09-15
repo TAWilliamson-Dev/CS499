@@ -86,4 +86,7 @@ public:
 	//Stamina must regenerate by this additional amount of running out due to sprinting.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stamina")
 	float SprintDrainStaminaDelay;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stamina")
+	float InteractStaminaCost;
 };

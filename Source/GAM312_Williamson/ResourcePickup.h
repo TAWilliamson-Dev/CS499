@@ -58,4 +58,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties")
 	UConsumableItemStats* ConsumableStats;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties")
+	int ItemID;
 };
