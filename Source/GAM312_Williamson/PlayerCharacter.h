@@ -11,6 +11,7 @@
 #include <GameFramework/CharacterMovementComponent.h>
 #include "ResourcePickup.h"
 #include "StatComponent.h"
+#include "BuildingPart.h"
 #include "Kismet/GameplayStatics.h"
 #include "PlayerCharacter.generated.h"
 
@@ -54,8 +55,20 @@ public:
 	UFUNCTION()
 	void Interact(const FInputActionValue& Value);
 
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void EatBerries(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateResources(float woodAmount, float stoneAmount, FString buildingObject);
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnBuilding(int buildingID, bool& isSuccess);
+
+	UFUNCTION()
+	void RotateBuilding();
+
+	UFUNCTION()
+	void ToggleCraftUI();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character Stats")
 	UStatComponent* Stats;
@@ -83,6 +96,18 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "HitMarker")
 	UMaterialInterface* hitDecal;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buildign Supplies")
+	TArray<int> BuildingArray;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool isBuilding;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TSubclassOf<ABuildingPart> BuildPartClass;
+
+	UPROPERTY()
+	ABuildingPart* spawnedPart;
 
 	/*
 		Enhanced input mapping context and actions, can be broken off into separate data asset.
@@ -122,7 +147,13 @@ public:
 	UInputAction* HotbarUISelectAction;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* BuildingRotateAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* EatAction;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* CraftAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<int> ResourceInventory;

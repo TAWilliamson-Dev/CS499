@@ -22,6 +22,10 @@ APlayerCharacter::APlayerCharacter()
 	hitDecal = CreateDefaultSubobject<UMaterialInterface>("Hit Marker");
 
 	ResourceInventory.Init(0, 3);
+
+	BuildingArray.SetNum(3);
+
+	isBuilding = false;
 }
 
 // Called when the game starts or when spawned
@@ -58,11 +62,47 @@ void APlayerCharacter::Tick(float DeltaTime)
 		}
 	}
 
-	Stats->Hunger += Stats->HungerRate * DeltaTime;
+	if (Stats->Hunger < Stats->MaxHunger) {
+		Stats->Hunger += Stats->HungerRate * DeltaTime;
+	}
 
 	//Drain health over time if Hunger reaches 0
 	if (Stats->Hunger >= Stats->MaxHunger) {
 		Stats->Health -= Stats->StarveHealthDrain * DeltaTime;
+	}
+
+	if (isBuilding) {
+		if (spawnedPart) {
+
+			spawnedPart->IsMoving = true;
+
+			FVector StartLocation = PlayerCamera->GetComponentLocation();
+			FVector Direction = PlayerCamera->GetForwardVector() * 400.0f;
+			FVector EndLocation = StartLocation + Direction;
+
+			FVector SpawnStartLocation = spawnedPart->GetActorLocation();
+			FVector SpawnGroundLevel = SpawnStartLocation - FVector(0, 0, 1000.0f);
+
+			FHitResult HitResult;
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(this);
+			Params.AddIgnoredActor(spawnedPart);
+			bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, SpawnStartLocation, SpawnGroundLevel, ECC_Visibility, Params);
+
+			float DistanceToGround = 0.0f;
+			if (bHit) {
+				DistanceToGround = (HitResult.ImpactPoint - SpawnStartLocation).Size();
+				if (DistanceToGround >= 0.00001f || EndLocation.Z > spawnedPart->GetActorLocation().Z) { //Distance to ground is non-zero, but smaller than this delta value OR player has moved camera up from ground level.
+					spawnedPart->SetActorLocation(EndLocation);
+				}
+				else {
+					spawnedPart->SetActorLocation(FVector(EndLocation.X, EndLocation.Y, spawnedPart->GetActorLocation().Z)); //Move along horizontal when making contact with the ground
+				}
+			}
+			else {
+				spawnedPart->SetActorLocation(EndLocation); //Continue following the cursor if no ground plane detected
+			}
+		}
 	}
 }
 
@@ -88,6 +128,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	Input->BindAction(SprintAction, ETriggerEvent::Completed, this, &APlayerCharacter::StopSprint);
 	Input->BindAction(InteractAction, ETriggerEvent::Completed, this, &APlayerCharacter::Interact);
 	Input->BindAction(EatAction, ETriggerEvent::Completed, this, &APlayerCharacter::EatBerries);
+	Input->BindAction(BuildingRotateAction, ETriggerEvent::Completed, this, &APlayerCharacter::RotateBuilding);
+	//Input->BindAction(CraftAction, ETriggerEvent::Completed, this, &APlayerCharacter::ToggleCraftUI);
 
 }
 
@@ -163,30 +205,39 @@ void APlayerCharacter::Interact(const FInputActionValue& Value) {
 	QueryParams.bTraceComplex = true;
 	QueryParams.bReturnFaceIndex = true;
 
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams)) {
-		AResourcePickup* HitResource = Cast<AResourcePickup>(HitResult.GetActor());
+	if (!isBuilding) {
 
-		if (Stats->Stamina >= Stats->InteractStaminaCost && HitResource) {
-			
-			FString hitName = HitResource->resourceName;
-			int resourceValue = FMath::RandRange(HitResource->HarvestQuantity-HitResource->HarvestQuantityDelta, HitResource->HarvestQuantity + HitResource->HarvestQuantityDelta);
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, QueryParams)) {
+			AResourcePickup* HitResource = Cast<AResourcePickup>(HitResult.GetActor());
 
-			HitResource->MaxHarvest = HitResource->MaxHarvest - resourceValue;
+			if (Stats->Stamina >= Stats->InteractStaminaCost && HitResource) {
 
-			ResourceInventory[HitResource->ItemID] += resourceValue;
+				FString hitName = HitResource->resourceName;
+				int resourceValue = FMath::RandRange(HitResource->HarvestQuantity - HitResource->HarvestQuantityDelta, HitResource->HarvestQuantity + HitResource->HarvestQuantityDelta);
 
-			if (hitDecal) {
-				UGameplayStatics::SpawnDecalAtLocation(GetWorld(), hitDecal, FVector(10.0f, 10.0f, 10.0f), HitResult.Location, FRotator(-90, 0, 0), 2.0f);
+				HitResource->MaxHarvest = HitResource->MaxHarvest - resourceValue;
+
+				ResourceInventory[HitResource->ItemID] += resourceValue;
+
+				if (hitDecal) {
+					UGameplayStatics::SpawnDecalAtLocation(GetWorld(), hitDecal, FVector(10.0f, 10.0f, 10.0f), HitResult.Location, FRotator(-90, 0, 0), 2.0f);
+				}
+
+				Stats->Stamina -= Stats->InteractStaminaCost;
+
+				if (HitResource->MaxHarvest <= 0) {
+					HitResource->Destroy();
+				}
+
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You have %i of the item %s"), ResourceInventory[HitResource->ItemID], *HitResource->resourceName));
 			}
-
-			Stats->Stamina -= Stats->InteractStaminaCost;
-
-			if (HitResource->MaxHarvest <= 0) {
-				HitResource->Destroy();
-			}
-
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You have %i of the item %s"),ResourceInventory[HitResource->ItemID], *HitResource->resourceName));
 		}
+	}
+	else {
+		if (spawnedPart) {
+			spawnedPart->IsMoving = false;
+		}
+		isBuilding = false;
 	}
 }
 
@@ -204,4 +255,58 @@ void APlayerCharacter::EatBerries(const FInputActionValue& Value)
 	else {
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You're out of berries.")));
 	}
+}
+
+void APlayerCharacter::UpdateResources(float woodAmount, float stoneAmount, FString buildingObject) {
+	if (woodAmount <= ResourceInventory[1]) {
+		if (stoneAmount <= ResourceInventory[2]) {
+			ResourceInventory[1] = ResourceInventory[1] - woodAmount;
+			ResourceInventory[2] = ResourceInventory[2] - stoneAmount;
+
+			if (buildingObject == "Wall") {
+				BuildingArray[0] += 1;
+			}
+
+			if (buildingObject == "Floor") {
+				BuildingArray[1] += 1;
+			}
+
+			if (buildingObject == "Ceiling") {
+				BuildingArray[2] += 1;
+			}
+		}
+	}
+}
+
+void APlayerCharacter::SpawnBuilding(int buildingID, bool& isSuccess) {
+	if (!isBuilding) {
+		if (BuildingArray[buildingID] >= 1) {
+			isBuilding = true;
+			FActorSpawnParameters SpawnParams;
+			FVector StartLocation = PlayerCamera->GetComponentLocation();
+			FVector Direction = PlayerCamera->GetForwardVector() * 400.f;
+			FVector EndLocation = StartLocation + Direction;
+			FRotator myRot(0, 0, 0);
+
+			BuildingArray[buildingID] -= 1;
+
+			spawnedPart = GetWorld()->SpawnActor<ABuildingPart>(BuildPartClass, EndLocation, myRot, SpawnParams);
+
+			isSuccess = true;
+		}
+		else {
+			isSuccess = false;
+		}
+	}
+}
+
+void APlayerCharacter::RotateBuilding() {
+	if (isBuilding) {
+		spawnedPart->AddActorWorldRotation(FRotator(0, 90, 0));
+	}
+}
+
+void APlayerCharacter::ToggleCraftUI()
+{
+
 }
