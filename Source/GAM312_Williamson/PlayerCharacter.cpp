@@ -73,7 +73,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 	if (isBuilding) {
 		if (spawnedPart) {
-
+			
 			spawnedPart->IsMoving = true;
 
 			FVector StartLocation = PlayerCamera->GetComponentLocation();
@@ -88,7 +88,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 			Params.AddIgnoredActor(this);
 			Params.AddIgnoredActor(spawnedPart);
 			bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, SpawnStartLocation, SpawnGroundLevel, ECC_Visibility, Params);
-
+			//Don't let the part go lower than the nearest surface
 			float DistanceToGround = 0.0f;
 			if (bHit) {
 				DistanceToGround = (HitResult.ImpactPoint - SpawnStartLocation).Size();

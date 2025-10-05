@@ -30,6 +30,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	UArrowComponent* PivotArrow;
 
+	//Is the player currently "holding" this part.
 	UPROPERTY(BlueprintReadWrite)
 	bool IsMoving;
 
