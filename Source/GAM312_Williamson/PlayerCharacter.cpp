@@ -218,6 +218,7 @@ void APlayerCharacter::Interact(const FInputActionValue& Value) {
 				HitResource->MaxHarvest = HitResource->MaxHarvest - resourceValue;
 
 				ResourceInventory[HitResource->ItemID] += resourceValue;
+				Stats->TotalResources += resourceValue; //Increase total resources harvested for objective tracking. GAM 312 Module 5
 
 				if (hitDecal) {
 					UGameplayStatics::SpawnDecalAtLocation(GetWorld(), hitDecal, FVector(10.0f, 10.0f, 10.0f), HitResult.Location, FRotator(-90, 0, 0), 2.0f);
@@ -236,6 +237,7 @@ void APlayerCharacter::Interact(const FInputActionValue& Value) {
 	else {
 		if (spawnedPart) {
 			spawnedPart->IsMoving = false;
+			Stats->TotalBuildingParts += 1; //Increment total parts built by player for objective tracking.
 		}
 		isBuilding = false;
 	}
