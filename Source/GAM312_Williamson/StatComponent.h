@@ -90,6 +90,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stamina")
 	float InteractStaminaCost;
 
+	//Stats related to required objectives.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Resources")
 	float TotalResources;
 

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/ArrowComponent.h"
+#include "Components/BoxComponent.h"
 #include "BuildingPart.generated.h"
 
 UCLASS()
@@ -34,4 +35,31 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool IsMoving;
 
+	//Is this part trying to snap to another
+	UPROPERTY(BlueprintReadWrite)
+	bool IsSnapping;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UBoxComponent* PartSnapper;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UArrowComponent* AttachTop;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UArrowComponent* AttachBottom;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UArrowComponent* AttachLeft;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UArrowComponent* AttachRight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UArrowComponent* AttachFront;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UArrowComponent* AttachBack;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float MinSnapTime = 0.0;
 };

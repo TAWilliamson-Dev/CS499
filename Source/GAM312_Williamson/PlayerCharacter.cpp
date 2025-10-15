@@ -90,7 +90,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 			bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, SpawnStartLocation, SpawnGroundLevel, ECC_Visibility, Params);
 			//Don't let the part go lower than the nearest surface
 			float DistanceToGround = 0.0f;
-			if (bHit) {
+			if (bHit && !spawnedPart->IsSnapping) {
 				DistanceToGround = (HitResult.ImpactPoint - SpawnStartLocation).Size();
 				if (DistanceToGround >= 0.00001f || EndLocation.Z > spawnedPart->GetActorLocation().Z) { //Distance to ground is non-zero, but smaller than this delta value OR player has moved camera up from ground level.
 					spawnedPart->SetActorLocation(EndLocation);
@@ -99,8 +99,77 @@ void APlayerCharacter::Tick(float DeltaTime)
 					spawnedPart->SetActorLocation(FVector(EndLocation.X, EndLocation.Y, spawnedPart->GetActorLocation().Z)); //Move along horizontal when making contact with the ground
 				}
 			}
-			else {
-				spawnedPart->SetActorLocation(EndLocation); //Continue following the cursor if no ground plane detected
+			else if (spawnedPart->IsMoving) {
+					
+				FVector WorldCenter = spawnedPart->Mesh->GetComponentLocation();
+				FVector SweepExtent = spawnedPart->PartSnapper->GetScaledBoxExtent();
+				FCollisionShape BoxCollision = FCollisionShape::MakeBox(SweepExtent);
+				FQuat QuatRotation = FQuat{ 0.0f,0.0f,0.0f,0.0f };
+
+				if (GetWorld()->SweepSingleByChannel(HitResult, WorldCenter, WorldCenter, QuatRotation, ECC_Visibility,BoxCollision, Params) && 
+					((FMath::Abs(EndLocation.X - spawnedPart->GetActorLocation().X) < 350) && (FMath::Abs(EndLocation.Y - spawnedPart->GetActorLocation().Y) < 350) && (FMath::Abs(EndLocation.Z - spawnedPart->GetActorLocation().Z) < 350))) {
+					ABuildingPart* HitPart = Cast<ABuildingPart>(HitResult.GetActor());
+
+					//Distance from top/bottom, right/left, front/back
+					TArray Distances = TArray<float>{0.0,0.0,0.0,0.0,0.0,0.0};
+
+					if (HitPart) {
+						Distances[0] = (spawnedPart->AttachTop->GetComponentLocation() - HitPart->AttachBottom->GetComponentLocation()).Size();
+						Distances[1] = (HitPart->AttachTop->GetComponentLocation() - spawnedPart->AttachBottom->GetComponentLocation()).Size();
+						Distances[2] = (spawnedPart->AttachRight->GetComponentLocation() - HitPart->AttachLeft->GetComponentLocation()).Size();
+						Distances[3] = (HitPart->AttachRight->GetComponentLocation() - spawnedPart->AttachLeft->GetComponentLocation()).Size();
+						Distances[4] = (spawnedPart->AttachFront->GetComponentLocation() - HitPart->AttachBack->GetComponentLocation()).Size();
+						Distances[5] = (HitPart->AttachFront->GetComponentLocation() - spawnedPart->AttachBack->GetComponentLocation()).Size();
+
+						float minValueX = 0.0f, minValueY = 0.0f, minValueZ = 0.0f, deltaT = 0.0f;
+
+						if (Distances[0] < Distances[1]) {
+							minValueZ = HitPart->AttachBottom->GetComponentLocation().Z;
+						}
+						else if(Distances[0] > Distances[1]) {
+							minValueZ = HitPart->AttachTop->GetComponentLocation().Z;
+						}
+
+						if (Distances[2] < Distances[3]) {
+							minValueY = HitPart->AttachRight->GetComponentLocation().Y - HitPart->AttachRight->GetRelativeLocation().Y;
+						}
+						else if(Distances[2] > Distances[3]) {
+							minValueY = HitPart->AttachLeft->GetComponentLocation().Y + HitPart->AttachLeft->GetRelativeLocation().Y;
+						}
+						else {
+							minValueY = HitPart->AttachFront->GetComponentLocation().Y + spawnedPart->AttachFront->GetRelativeLocation().Y;
+						}
+
+						if (Distances[4] < Distances[5]) {
+							minValueX = HitPart->AttachFront->GetComponentLocation().X - HitPart->AttachFront->GetRelativeLocation().X;
+						}
+						else if(Distances[4] > Distances[5]) {
+							minValueX = HitPart->AttachBack->GetComponentLocation().X + HitPart->AttachBack->GetRelativeLocation().X;;
+						}
+						else {
+							minValueX = HitPart->AttachTop->GetComponentLocation().X + HitPart->AttachBottom->GetRelativeLocation().X;
+						}
+						
+						
+						if (spawnedPart->MinSnapTime == 0.0f) {
+							GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("I tried to set the snapping point!")));
+							spawnedPart->SetActorLocation(FVector{ minValueX,minValueY,minValueZ });
+							spawnedPart->IsSnapping = true;
+							spawnedPart->IsMoving = false;
+						}
+						else if (spawnedPart->MinSnapTime < 5.0f) {
+							spawnedPart->MinSnapTime += 1.0f * DeltaTime;
+						}
+						else {
+							spawnedPart->MinSnapTime = 0.0f;
+						}
+					}
+				}
+				else {
+					spawnedPart->IsMoving = true;
+					spawnedPart->IsSnapping = false;
+					spawnedPart->SetActorLocation(EndLocation); //Continue following the cursor if the player is out of range of a snapping point
+				}
 			}
 		}
 	}
@@ -304,7 +373,7 @@ void APlayerCharacter::SpawnBuilding(int buildingID, bool& isSuccess) {
 
 void APlayerCharacter::RotateBuilding() {
 	if (isBuilding) {
-		spawnedPart->AddActorWorldRotation(FRotator(0, 90, 0));
+		spawnedPart->Mesh->SetRelativeRotation(FRotator(0.0f,spawnedPart->Mesh->GetRelativeRotation().Yaw + 90.0f, 0.0f));
 	}
 }
 
