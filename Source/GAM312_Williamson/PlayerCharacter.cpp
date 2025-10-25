@@ -9,6 +9,7 @@ APlayerCharacter::APlayerCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	//Create default sub objects for the player camera, hit decal, and initialize the resource inventory as an array of ints
 	PlayerCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Cam"));
 
 	PlayerCamera->SetupAttachment(GetMesh(), "head");
@@ -62,12 +63,13 @@ void APlayerCharacter::Tick(float DeltaTime)
 		}
 	}
 
+	//Observe player hunger, 
 	if (Stats->Hunger < Stats->MaxHunger) {
 		Stats->Hunger += Stats->HungerRate * DeltaTime;
 	}
 
 	//Drain health over time if Hunger reaches 0
-	if (Stats->Hunger >= Stats->MaxHunger) {
+	if (Stats->Hunger >= Stats->MaxHunger && Stats->Health >= 0) {
 		Stats->Health -= Stats->StarveHealthDrain * DeltaTime;
 	}
 
@@ -152,7 +154,6 @@ void APlayerCharacter::Tick(float DeltaTime)
 						
 						
 						if (spawnedPart->MinSnapTime == 0.0f) {
-							GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("I tried to set the snapping point!")));
 							spawnedPart->SetActorLocation(FVector{ minValueX,minValueY,minValueZ });
 							spawnedPart->IsSnapping = true;
 							spawnedPart->IsMoving = false;
@@ -258,9 +259,6 @@ void APlayerCharacter::StopSprint(const FInputActionValue& Value)
 	//Return player movement speed to normal
 	PlayerCharacterMovement->MaxWalkSpeed = Stats->WalkSpeed;
 	IsRunning = false;
-
-	//if(!IsRunning)
-	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("False")));
 }
 
 void APlayerCharacter::Interact(const FInputActionValue& Value) {
@@ -284,8 +282,10 @@ void APlayerCharacter::Interact(const FInputActionValue& Value) {
 				FString hitName = HitResource->resourceName;
 				int resourceValue = FMath::RandRange(HitResource->HarvestQuantity - HitResource->HarvestQuantityDelta, HitResource->HarvestQuantity + HitResource->HarvestQuantityDelta);
 
+				//Decrement the hit resource node by the amount given to the player
 				HitResource->MaxHarvest = HitResource->MaxHarvest - resourceValue;
 
+				//Increment the quantity of the item by index in the player inventory
 				ResourceInventory[HitResource->ItemID] += resourceValue;
 				Stats->TotalResources += resourceValue; //Increase total resources harvested for objective tracking. GAM 312 Module 5
 
@@ -295,11 +295,10 @@ void APlayerCharacter::Interact(const FInputActionValue& Value) {
 
 				Stats->Stamina -= Stats->InteractStaminaCost;
 
+				//Destroy the actor on resource exhaustion
 				if (HitResource->MaxHarvest <= 0) {
 					HitResource->Destroy();
-				}
-
-				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You have %i of the item %s"), ResourceInventory[HitResource->ItemID], *HitResource->resourceName));
+				}			
 			}
 		}
 	}
@@ -319,12 +318,7 @@ void APlayerCharacter::EatBerries(const FInputActionValue& Value)
 		ResourceInventory[0] -= 1;
 		if (Stats->Hunger - 5 < Stats->MaxHunger) {
 			Stats->Hunger -= 5;
-
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You ate a berry!")));
 		}
-	}
-	else {
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("You're out of berries.")));
 	}
 }
 
